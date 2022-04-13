@@ -1,4 +1,4 @@
-# GOAL: filter the trees so that the array only contains 1-40 for trees 1-40
+
 import numpy as np
 import pandas as pd
 
@@ -7,21 +7,27 @@ import pandas as pd
 
 distances_unfiltered = pd.read_csv("Sim_Trees_distances_comparisons.csv")  # loads in data frame
 
-filterArray = [] # array for all the tree filters that will be generated
+filterArray = []  # array for all the tree filters that will be generated
 
-dataframeSetup = []
+dataframeSetup = [] # array for the index and column names
 
-final_Num_Trees = 50 # VERY IMPORTANT: this will be the value that is shared through the program the number of trees
+final_Num_Trees = 40  # VERY IMPORTANT : this will be the value that is shared through the program the number of trees
+# this is the total number of trees that we will take the weighted distances from (This is basically the only thing
+# you might want to change in the code, note this code works from tree one to tree finalNumTrees
 
-# above is the 40 x40 rows(index) and columns that will go into the dataframe
+
+
 def data_frame_setup(numTrees):
     for p in range(numTrees):
-        dataframeSetup.append("Tree" + str(p+1)) # add the word tree# +1 to the data frame set up (start a tree1
-
-data_frame_setup(final_Num_Trees)
+        dataframeSetup.append("Tree" + str(p+1))  # add the word tree# +1 to the data frame set up (start a tree1)
 
 
-weightDataFrame = pd.DataFrame(columns=dataframeSetup, index=dataframeSetup)  # set an empty data frame with 40 columns and 40 rows
+data_frame_setup(final_Num_Trees)  # create the dataframe row and column names and put them in the array called
+# data_frame_setup
+
+
+weightDataFrame = pd.DataFrame(columns=dataframeSetup, index=dataframeSetup)
+# set an empty data frame with 40 columns and 40 rows
 
 
 for i in range(final_Num_Trees):  # create the filters a put them into a filter array
@@ -38,12 +44,10 @@ for i in range(final_Num_Trees):
 
         weightedDistancesTemp = distances_filtered["weighted_distance"]  # a series pulling the one column from distances filtered
 
-
         for k in range(i):
             zeroArray = np.append(0, zeroArray) # add i-1 zeros to the array
 
         appendZero = np.append(zeroArray, weightedDistancesTemp.values)  # insert a zeros at the front of the array (to fill it to 40)
-
 
         # Place the data for each tree into the weightDataFrame
 
@@ -53,7 +57,6 @@ for i in range(final_Num_Trees):
     else:
         for x in range(final_Num_Trees-1):  # fill the zero array with zeros
             zeroArray = np.append(0, zeroArray)
-
 
         # Place the data for each tree into the weightDataFrame
         weightDataFrame.loc["Tree" + str(final_Num_Trees)] = zeroArray  # insert zeros into the last row of dataframe (all comparisons would have already been made)
