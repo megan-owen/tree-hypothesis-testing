@@ -1,17 +1,12 @@
-# When you read in the file automate that the code reads the number of rows then divides the number of rows in 2 so that we can create the vector
-library(plyr)
 library(crossmatch)
 
 dat <-  read.csv("symmetricMatrix.csv", row.names = 1)
-dat
-head(dat)
-dat <- data.matrix(dat) # convert dataframe to matrix
-#isSymmetric.matrix(dat) # check if the matrix is symmetric 
+# dat # to see the data
 
-#dat <- Matrix::forceSymmetric(dat) # force the matrix to be symmetric
-#head(dat) # show the data
-#isSymmetric.matrix(dat)
-count(dat,'Tree1')
-z <- c(rep(0,20),rep(1,20)) # creates vector
-z
+dat <- data.matrix(dat) # converts the dataframe into a matrix
+ 
+
+z <- c(rep(0,(nrow(dat)/2)),rep(1,(nrow(dat)/2))) # creates vector (nrow(dat)/2) 
+# gets the number of rows in the matrix then divides that number by 2
+# z # to see the vectors
 crossmatch::crossmatchtest(z,dat) # package :: method
