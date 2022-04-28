@@ -6,28 +6,19 @@ import pandas as pd
 
 
 
-filterArray = []  # array for all the tree filters that will be generated
-
-dataframeSetup = []  # array for the index and column names
-
-
-
-
-# this is the total number of trees that we will take the weighted distances from (This is basically the only thing
-# you might want to change in the code, note this code works from tree one to tree finalNumTrees
-
-def data_frame_setup(numTrees):
-    for p in range(numTrees):
+def panda_plus_symmetry_generate(sim_tree_distancesDF, final_Num_Trees): #function for calling from master file takes in A DATAFRAME with the tree comparison distances (sim_tree_distancesDF) and the rows x columns of the matrix you want to create (final_Num_trees)
+    # etup the Data Frame
+    dataframeSetup = []  # array for the index and column names
+    for p in range(final_Num_Trees):
         dataframeSetup.append("Tree" + str(p + 1))  # add the word tree# +1 to the data frame set up (start a tree1)
 
 
-def panda_plus_symmetry_generate(sim_tree_distancesDF, final_Num_Trees): #function for calling from master file takes in A DATAFRAME with the tree comparison distances (sim_tree_distancesDF) and the rows x columns of the matrix you want to create (final_Num_trees)
+    filterArray = []  # array for all the tree filters that will be generated
 
     distances_unfiltered = sim_tree_distancesDF  #  Note: Expects a Dataframe this loads in data frame
     final_Num_Trees = final_Num_Trees  # VERY IMPORTANT : this will be the value that is shared through the program the number of trees (same as num of rows and columns)
 
-    data_frame_setup(final_Num_Trees)  # create the dataframe row and column names and put them in the array called
-    # data_frame_setup
+
     weightDataFrame = pd.DataFrame(columns=dataframeSetup, index=dataframeSetup)
     # set an empty data frame with 40 columns and 40 rows
 
