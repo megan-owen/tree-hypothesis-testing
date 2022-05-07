@@ -6,7 +6,7 @@ import pandas as pd
 
 
 
-def panda_plus_symmetry_generate(sim_tree_distancesDF, final_Num_Trees, fileName): #function for calling from master file takes in A DATAFRAME with the tree comparison distances (sim_tree_distancesDF) and the rows x columns of the matrix you want to create (final_Num_trees)
+def panda_plus_symmetry_generate(sim_tree_distancesDF, final_Num_Trees,fileName): #function for calling from master file takes in A DATAFRAME with the tree comparison distances (sim_tree_distancesDF) and the rows x columns of the matrix you want to create (final_Num_trees)
     # etup the Data Frame
     dataframeSetup = []  # array for the index and column names
     for p in range(final_Num_Trees):
@@ -58,8 +58,7 @@ def panda_plus_symmetry_generate(sim_tree_distancesDF, final_Num_Trees, fileName
 
     # Flip the Triangle
 
-    # go through the whole dataframe and copy all the data from one side (1,0) to the other side (0,1) then saves it to
-    # the fileName
+    # go through the whole dataframe and copy all the data from one side (1,0) to the other side (0,1)
     for i in range(final_Num_Trees):
         for a in range(final_Num_Trees):
             Tree01 = "Tree" + str(a + 1)  # construct the strings form the row name
@@ -67,9 +66,7 @@ def panda_plus_symmetry_generate(sim_tree_distancesDF, final_Num_Trees, fileName
 
             weightDataFrame.at[Tree01, Tree02] = weightDataFrame.at[Tree02, Tree01]  # insert the data
 
-    # print(weightDataFrame)  # print out the dataframe
+    #print(weightDataFrame)  # print out the dataframe
     weightDataFrame.to_csv(fileName)
-
     return weightDataFrame
-
-
+   
