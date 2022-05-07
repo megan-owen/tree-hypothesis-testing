@@ -1,0 +1,6 @@
+First install rpy2 into conda with:
+conda install -c r rpy2
+the run the code to install crossmatch  on the notebook named:
+ Python_R_package_script.ipynb
+Then, this is the usual path where the libraries for R will be contained and here is where we need to manually put the libraries for crossmatch to work.
+C:\Users\Eric Aragundi\anaconda\Lib\R\library
