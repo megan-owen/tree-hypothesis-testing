@@ -96,7 +96,7 @@ def generate_sim_tree_files(r_tree2,tree_path):
 
 
 
-def generate_comparison_files(copy_num,sim_file_path):
+def generate_comparison_files(copy_num,sim_file_path,comparison_type):
 #     data_dir = "SimMlTrees304_{}/".format(copy_num)
 
     tree_array = []
@@ -132,9 +132,14 @@ def generate_comparison_files(copy_num,sim_file_path):
             tree_data.loc[count,'Tree_comparison'] = str(i+1) + "vs" + str(j+1)
             tree_data.loc[count,'Num_First_tree'] = str(i+1)
             tree_data.loc[count,'Num_Second_tree'] = str(j+1)
-    #            tree_data.loc[count,'unweighted_distance'] = unweighted_distance(tree_array[i],tree_array[j])
-            tree_data.loc[count,'weighted_distance'] = weighted_distance(tree_array[i],tree_array[j])
-    #            tree_data.loc[count,'euclidean_distance'] = euclidean_distance(tree_array[i],tree_array[j])
+            
+            if comparison_type == "unweighted_distance":
+                tree_data.loc[count,'unweighted_distance'] = unweighted_distance(tree_array[i],tree_array[j])
+            elif comparison_type == "weighted_distance":
+                tree_data.loc[count,'weighted_distance'] = weighted_distance(tree_array[i],tree_array[j])
+            else:
+                tree_data.loc[count,'euclidean_distance'] = euclidean_distance(tree_array[i],tree_array[j])
+                       
             count += 1    
         k += 1;
     tree_data.to_csv(folder_dir+ 'Sim_Trees_distances_comparisons_{}.csv'.format(copy_num),index=False)
