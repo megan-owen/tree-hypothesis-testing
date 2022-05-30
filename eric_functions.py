@@ -146,6 +146,77 @@ def generate_comparison_files(copy_num,sim_file_path,comparison_type):
 
     return tree_data
     #print("END!!")
+    
+def generate_comparison_files_simphy(merged_file,copy_num,comparison_type):
+#     data_dir = "SimMlTrees304_{}/".format(copy_num)
+
+    tree_array = merged_file.split()
+    tree_s = ""
+    
+#     for i in range(1,305,1):
+#         #change the file pattern here
+#         file_pat = "/SimMltree_{}.txt".format(i)
+#         dir_tree = sim_file_path + file_pat 
+#         tree_string = open(dir_tree).read()
+#         tree_array.append(tree_string)
+#         tree_s += tree_string 
+
+    
+#     tree_file = open(sim_file_path+ "/SimMltree_merged.txt", "w+")
+#     tree_file.write(tree_s)
+#     tree_file.close()    
+    
+    #CREATE A DATAFRAME TO STORE ALL COMPARISONS OF TREES AND DIFFERENT METHODS OF DISTANCE
+    
+    col_names = ['Tree_comparison',"Num_First_tree","Num_Second_tree", 'weighted_distance']
+    len1 = len(tree_array) - 1
+    len2 = int((len1*(len1+1))/2)
+#     print(len2)
+    tree_data = pd.DataFrame(0, index= range(0,len2), columns = col_names)
+    #print(tree_data)
+    #print("START!!!")
+    count = 0
+#     print("count= ",count)
+#     print("comparisons num= ",len2)
+#     print("dataframe size= ",len(tree_data))
+    k = 0
+    for i in range(k,len(tree_array),1):
+        for j in range(k+1,len(tree_array),1):
+            #print(str(i+1) + "vs" + str(j+1))
+            tree_data.loc[count,'Tree_comparison'] = str(i+1) + "vs" + str(j+1)
+            tree_data.loc[count,'Num_First_tree'] = str(i+1)
+            tree_data.loc[count,'Num_Second_tree'] = str(j+1)
+            
+            
+            if comparison_type == "unweighted_distance":
+                tree_data.loc[count,'unweighted_distance'] =unweighted_distance(tree_array[i],tree_array[j])
+            elif comparison_type == "weighted_distance":
+                
+                tree_data.loc[count,'weighted_distance'] = weighted_distance(tree_array[i],tree_array[j])
+            else:
+                tree_data.loc[count,'euclidean_distance'] = euclidean_distance(tree_array[i],tree_array[j])
+                       
+            count += 1    
+        k += 1;
+    tree_data.to_csv(folder_dir+ 'Sim_Trees_distances_comparisons_{}.csv'.format(copy_num),index=False)
+
+    return tree_data
+#     #print("END!!")
+
+    
+def merge_files(file1,file2,output_path,copy_num):
+    t_data = open(file1)
+    s1 = str(t_data.read())
+    s1 
+    t_data2 = open(file2)
+    s2 = str(t_data2.read())
+    s2 
+    s3 = s1 + s2
+
+    f= open(output_path + f"{copy_num}.txt","w+")
+    f.write(s3)
+    f.close()
+    return s3
 
 
 
