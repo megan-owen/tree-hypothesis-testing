@@ -1,9 +1,9 @@
 import os
 
 
-def trees_to_one(file_path_1, file_path_2, num_trees_per_group): # put an r in front of the string to ignore escape char
-    full_Tree1 = open("allTreesGroupOne.txt", "w")  # create a file called allTrees1
-    full_Tree2 = open("allTreesGroupTwo.txt", "w")  # create a file called allTrees2
+def trees_to_one(file_path_1, file_path_2, num_trees_per_group, output_path_1,output_path_2): # put an r in front of the string to ignore escape char
+    full_Tree1 = open(output_path_1, "w")  # create a file called allTrees1
+    full_Tree2 = open(output_path_2, "w")  # create a file called allTrees2
 
     dir1 = file_path_1
     dir2 = file_path_2
