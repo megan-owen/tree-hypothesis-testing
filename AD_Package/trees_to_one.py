@@ -19,7 +19,8 @@ def trees_to_one(file_path_1, file_path_2, num_trees_per_group, output_path_1,ou
         files1 = (os.listdir(dir1))[i]
         files2 = (os.listdir(dir2))[i]
         # will create an array of files in the directory use the index to choose how many files are copied
-
+        
+# check what the system the user is on
         if system.__contains__("macOS"):
             file_name1 = dir1 + r"/{file}"
             file1 = open(file_name1.format(file=files1))  # placing the actual file (.tree) into the string
