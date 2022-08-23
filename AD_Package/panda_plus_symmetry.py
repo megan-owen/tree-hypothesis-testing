@@ -7,7 +7,8 @@ import pandas as pd
 
 
 def panda_plus_symmetry_generate(sim_tree_distancesDF, final_Num_Trees, fileName): #function for calling from master file takes in A DATAFRAME with the tree comparison distances (sim_tree_distancesDF) and the rows x columns of the matrix you want to create (final_Num_trees)
-    # etup the Data Frame
+    # set up the Data Frame
+    final_Num_Trees = int(final_Num_Trees) #force this to be an int because I keep getting errors
     dataframeSetup = []  # array for the index and column names
     for p in range(final_Num_Trees):
         dataframeSetup.append("Tree" + str(p + 1))  # add the word tree# +1 to the data frame set up (start a tree1)
@@ -23,7 +24,7 @@ def panda_plus_symmetry_generate(sim_tree_distancesDF, final_Num_Trees, fileName
     # set an empty data frame with 40 columns and 40 rows
 
     for i in range(final_Num_Trees):  # create the filters a put them into a filter array
-        tree_filter = (distances_unfiltered["Num_First_tree"] == i) & (distances_unfiltered["Num_Second_tree"] <= final_Num_Trees)  # tree filter is collection of boolean values literally a filter filters the trees into boolean values
+        tree_filter = ((distances_unfiltered["Num_First_tree"]).astype(int) == i) & ((distances_unfiltered["Num_Second_tree"]).astype(int) <= final_Num_Trees)  # tree filter is collection of boolean values literally a filter filters the trees into boolean values
         filterArray.append(tree_filter)
 
     for i in range(final_Num_Trees):
