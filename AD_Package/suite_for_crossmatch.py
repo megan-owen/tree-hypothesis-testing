@@ -37,7 +37,7 @@ def cross_test(in_folder, file_name):  # runs crossmatch test
 
 # p - folder number containing the matrix
 # rep number of files you want to generate from the function dec_matrix_gen, this is also the num of matrix's in a dir
-# numtrees - the number of trees contained within each matrix generated (must be at least 4)
+# numtrees - the number of trees contained within each matrix generated (must be at least 4 and even)
 # gen_Matrix - want to generate a matrix everytime the code is run? OFF/FALSE by default (so you will get an error with no dir's)
 def printDat(p, rep, numtrees, gen_Matrix):  # prints data to screen
     print(
