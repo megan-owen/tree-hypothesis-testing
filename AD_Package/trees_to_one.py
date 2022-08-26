@@ -1,6 +1,7 @@
+
 import os
 import platform
-
+# Combines all the simphy files into two files
 def trees_to_one(file_path_1, file_path_2, num_trees_per_group, output_path_1,
                  output_path_2):  # put an r in front of the string to ignore escape char
     system = platform.platform()
