@@ -10,63 +10,57 @@ import numpy as np
 import random
 
 
-folder_dir = "./"
+folder_dir = "/"
 
 def unweighted_distance(tree1,tree2):
-    s1 = tree1
-    s2 = tree2
 
     # establish common taxon namespace
     tns = dendropy.TaxonNamespace()
 
     # ensure all trees loaded use common namespace
-    tree1 = dendropy.Tree.get(
-            data=s1,
+    tree1d = dendropy.Tree.get(
+            data=tree1,
             schema='newick',
             taxon_namespace=tns)
-    tree2 = dendropy.Tree.get(
-            data=s2,
+    tree2d = dendropy.Tree.get(
+            data=tree2,
             schema='newick',
             taxon_namespace=tns)
 
     ## Unweighted Robinson-Foulds distance
-    return treecompare.symmetric_difference(tree1, tree2)
+    return treecompare.symmetric_difference(tree1d, tree2d)
 
 def weighted_distance(tree1,tree2):
-    s1 = tree1
-    s2 = tree2
 
     # establish common taxon namespace
     tns = dendropy.TaxonNamespace()
 
     # ensure all trees loaded use common namespace
-    tree1 = dendropy.Tree.get(
-            data=s1,
+    tree1d = dendropy.Tree.get(
+            data=tree1,
             schema='newick',
             taxon_namespace=tns)
-    tree2 = dendropy.Tree.get(
-            data=s2,
+    tree2d = dendropy.Tree.get(
+            data=tree2,
             schema='newick',
             taxon_namespace=tns)
-    return treecompare.weighted_robinson_foulds_distance(tree1, tree2)
+    return treecompare.weighted_robinson_foulds_distance(tree1d, tree2d)
 
 def euclidean_distance(tree1,tree2):
-    s1 = tree1
-    s2 = tree2
 
     # establish common taxon namespace
     tns = dendropy.TaxonNamespace()
 
     # ensure all trees loaded use common namespace
-    tree1 = dendropy.Tree.get(
-            data=s1,
+    tree1d = dendropy.Tree.get(
+            data=tree1,
             schema='newick',
             taxon_namespace=tns)
-    tree2 = dendropy.Tree.get(
-            data=s2,
+    tree2d = dendropy.Tree.get(
+            data=tree2,
             schema='newick',
             taxon_namespace=tns)
-    return treecompare.euclidean_distance(tree1, tree2)
+    return treecompare.euclidean_distance(tree1d, tree2d)
 
 
 def generate_sim_tree_files(r_tree2,tree_path):
@@ -147,11 +141,19 @@ def generate_comparison_files(copy_num,sim_file_path,comparison_type):
     return tree_data
     #print("END!!")
     
+    
+    #merged_file : string that contains all the trees.
+    
 def generate_comparison_files_simphy(merged_file,copy_num,comparison_type):
 #     data_dir = "SimMlTrees304_{}/".format(copy_num)
 
-    tree_array = merged_file.split()
+    print("*********************************************")
+
+    tree_array = merged_file.split("\n")
+    
     tree_s = ""
+    
+    print(tree_array)
     
 #     for i in range(1,305,1):
 #         #change the file pattern here
@@ -198,7 +200,8 @@ def generate_comparison_files_simphy(merged_file,copy_num,comparison_type):
                        
             count += 1    
         k += 1;
-    tree_data.to_csv(folder_dir+ 'Sim_Trees_distances_comparisons_{}.csv'.format(copy_num),index=False)
+    tree_data.to_csv('Sim_Trees_distances_comparisons_{}.csv'.format(copy_num),index=False)
+
 
     return tree_data
 #     #print("END!!")

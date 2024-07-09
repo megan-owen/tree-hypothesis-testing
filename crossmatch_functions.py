@@ -20,8 +20,8 @@ def crossmatchdist(bigN,n):
             if ((math.floor(a2)==a2)&(a2>=0)):
                     a0 = I-(a1+a2)
                     if (a0>=0):
-                            pr = math.factorial(I)/choose(bigN,n)
-                            pr = pr*(2**a1)/(math.factorial(a0)*math.factorial(a1)*math.factorial(a2))
+                            pr = int(math.factorial(I))/choose(bigN,n)
+                            pr = int(pr*(2**a1))/(math.factorial(a0)*math.factorial(a1)*math.factorial(a2))
 
                             list1 = [[a0],[a1],[a2],[pr]]
 
@@ -34,15 +34,15 @@ def crossmatchdist_df(bigN,n):
     if (bigN%2 == 1):
         return "The number of subjects, bigN, should be even"
     I = int(bigN/2)
-    df = pd.DataFrame(index = [1,2,3,4])
-    dist = df
+    dist = pd.DataFrame(index = [1,2,3,4])
+
     for a1 in range(0,I+1):
             a2 = (n-a1)/2
             if ((math.floor(a2)==a2)&(a2>=0)):
                     a0 = I-(a1+a2)
                     if (a0>=0):
-                            pr = math.factorial(I)/choose(bigN,n)
-                            pr = pr*(2**a1)/(math.factorial(a0)*math.factorial(a1)*math.factorial(a2))
+                            pr = int(math.factorial(I))/choose(bigN,n)
+                            pr = int(pr*(2**a1))/(math.factorial(a0)*math.factorial(a1)*math.factorial(a2))
                             list1 = [[a0],[a1],[a2],[pr]]
                             dist = pd.concat([dist,pd.DataFrame(list1)],axis=1)
                             
@@ -117,7 +117,7 @@ def crossmatchtest(z,D):
     n = sum(z0)
     
     if(bigN < 340):        
-            dist = crossmatchdist(bigN,n)
+            dist = int(crossmatchdist(bigN,n))
             pval = None
             for j in range(len(dist[1])):
                 if(dist[1][j] == a1):
