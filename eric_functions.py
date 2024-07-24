@@ -153,7 +153,7 @@ def generate_comparison_files_simphy(merged_file,copy_num,comparison_type):
     
     tree_s = ""
     
-    print(tree_array)
+#    print(tree_array)
     
 #     for i in range(1,305,1):
 #         #change the file pattern here
@@ -193,7 +193,6 @@ def generate_comparison_files_simphy(merged_file,copy_num,comparison_type):
             if comparison_type == "unweighted_distance":
                 tree_data.loc[count,'unweighted_distance'] =unweighted_distance(tree_array[i],tree_array[j])
             elif comparison_type == "weighted_distance":
-                
                 tree_data.loc[count,'weighted_distance'] = weighted_distance(tree_array[i],tree_array[j])
             else:
                 tree_data.loc[count,'euclidean_distance'] = euclidean_distance(tree_array[i],tree_array[j])
@@ -209,7 +208,7 @@ def generate_comparison_files_simphy(merged_file,copy_num,comparison_type):
     
 def merge_files(file1,file2,output_path,copy_num):
     t_data = open(file1)
-    s1 = str(t_data.read())
+    s1 = str(t_data.read()) + "\n" #added "\n" so last line of file 1 is separated from first line of file 2
     s1 
     t_data2 = open(file2)
     s2 = str(t_data2.read())
