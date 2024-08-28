@@ -1,13 +1,22 @@
-import random # Import the random module for random sampling
+import random
 
-def select_random_lines(file_path, n): #Define a function to select n random lines from a file
-    with open(file_path, 'r') as file: # Open the specified file in read mode
-        lines = file.readlines() # Read all lines from the file into a list
-    return random.sample(lines, n) # Return a list of n randomly sampled lines from the file
 
-def save_lines_to_file(lines, output_file_path): # Define a function to save lines to a specified file
-    with open(output_file_path, 'w') as file: # Open the specified file in write mode
+#This function selects n lines randomly of a text file.
+#Input = path to the file from which you desire to extract n random lines, and number of lines.
+#Output = List of random lines
+
+def select_random_lines(file_path, n):
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+    return random.sample(lines, n)
+
+#This function writes each element of a list in a new line of a text file.
+#Input = list, and path where it is going to save the output text file.
+#Output = no output.
+   
+def save_lines_to_file(lines, output_file_path):
+    with open(output_file_path, 'w') as file:
         for line in lines[:-1]:  # Process all lines except the last one
-            file.write(line.strip() + '\n') # Write each line without leading/trailing whitespace, followed by a newline
+            file.write(line.strip() + '\n')
         if lines:  # Check if there are any lines
             file.write(lines[-1].strip())  # Write the last line without an additional newline
