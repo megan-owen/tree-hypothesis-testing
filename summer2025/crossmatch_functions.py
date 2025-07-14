@@ -152,16 +152,16 @@ def crossmatchtest(z,D):
 
     final_list = [a1,Ea1,Va1,dev,pval,approx] #Suggestion of change, so it's easier to extract pvalue later
     
-    print("--------------------------------------------------------------------------")
-    print ("Results of crossmatch test:")  #Suggestion of change for neater output
-    print("\n")
-    print("a1: ",a1)
-    print("Ea1: ",Ea1)
-    print("Va1: ",Va1)
-    print("dev: ",dev)
-    print("pval: ",pval)
-    print("approxpval: ",approx)
-    print("\n")
+  # print("--------------------------------------------------------------------------")
+  # print ("Results of crossmatch test:")  #Suggestion of change for neater output
+  # print("\n")
+  # print("a1: ",a1)
+  # print("Ea1: ",Ea1)
+  # print("Va1: ",Va1)
+  # print("dev: ",dev)
+  # print("pval: ",pval)
+  # print("approxpval: ",approx)
+  # print("\n")
     
     
 #    final_list = {'a1':a1, 
