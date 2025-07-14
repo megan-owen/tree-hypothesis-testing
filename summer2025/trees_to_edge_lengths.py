@@ -3,6 +3,18 @@ from dendropy.simulate import treesim
 import os
 import pandas as pd
 from subprocess import *
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--tau1", type=float)
+parser.add_argument("--tau2", type=float)
+parser.add_argument("--tau3", type=float)
+parser.add_argument("--N1", type=int)
+parser.add_argument("--N2", type=int)
+parser.add_argument("--N3", type=int)
+parser.add_argument("--out", type=str)
+args = parser.parse_args()
+
 
 
 #   Notes: 
@@ -20,7 +32,8 @@ from subprocess import *
 # directory for output with / at end
 #OUTDIR = "/Users/megan/Dropbox/RESEARCH/AIM_Square/BHVSummaries/BHV-contours/simulations_for_paper_fall2024/parameters_from_file_names/anomaly_tauAB_10000_tauABC_20000_tauRoot_20100_(x0.01_y1)/"
 #OUTDIR = "/Users/megan/Dropbox/RESEARCH/AIM_Square/BHVSummaries/BHV-contours/simulations_for_paper_fall2024/for_R/star/"
-OUTDIR = "/Users/megan/Dropbox/service_and_work_admin/career_REU/2025_cohort/data/"
+OUTDIR = "./" # current directory  
+
 
 SIMULATE_GENE_TREES = True      # set to false if using an existing gene tree file
                                 # Taxa will be A, B, C, D
@@ -35,8 +48,6 @@ JAR_FILE = "SturmMean_201102.jar"
 # Parameters for using existing gene tree file
 ################################################
 
-# Gene tree file
-GENE_TREE_FILE = "/Users/megan/Dropbox/RESEARCH/AIM_Square/BHVsummaries/BHV-contours/simulations_for_paper_fall2024/for_R/star/star_N3_10000_first_10.txt"
 
 # Taxa order will correspond to A, B, C, D, where species tree is either (((A,B),C),D) or ((A,B),(C,D))
 TAXA_LIST = ["SSY","HLE","NLE","HMO"]
@@ -78,12 +89,23 @@ POP_SIZE = 10000  # default population size
 
 NUM_GENE_TREES = 10000
 
-TAU1 = 4.22*10**(-3)/mu  # above S and B
-TAU2 = 4.255*10**(-3)/mu   # above S,B,N
-TAU3 = 4.2775*10**(-3)/mu
-N1 = 2.4*10**(-3)/mu/2 # above S and B
-N2 = 2.355*10**(-3)/mu/2 # above S, B, N
-N3 = 2.5*10**(-3)/mu/2
+
+#These are hardcoded values.
+
+
+#TAU1 = 4.22*10**(-3)/mu  # above S and B
+#TAU2 = 4.255*10**(-3)/mu   # above S,B,N
+#TAU3 = 4.2775*10**(-3)/mu
+#N1 = 2.4*10**(-3)/mu/2 # above S and B
+#N2 = 2.355*10**(-3)/mu/2 # above S, B, N
+#N3 = 2.5*10**(-3)/mu/2
+
+TAU1 = args.tau1  
+TAU2 = args.tau2  
+TAU3 = args.tau3  
+N1 = args.N1      
+N2 = args.N2     
+N3 = args.N3      
 
 
 #####################################################

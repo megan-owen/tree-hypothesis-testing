@@ -1,0 +1,2 @@
+Observed mean difference in edge lengths: 2589.3391
+P-value from permutation test: 0.0000
