@@ -4,64 +4,69 @@ import os
 from crossmatch_functions import crossmatchtest
 from dendropy.calculate import treecompare  # import for RF distances
 
-# Load trees from a .tre file
-def load_trees(filename):
-    return dendropy.TreeList.get(path=filename, schema="newick", preserve_underscores=True)
 
-#Temporarily testing with only 50 trees from each sample.
-sampleA_trees = load_trees("sampleA.tre")[:50]
-sampleB_trees = load_trees("sampleB.tre")[:50]
-
-
-# Combine both samples into one list
-all_trees = sampleA_trees + sampleB_trees
-num_A = len(sampleA_trees)
-num_B = len(sampleB_trees)
+# === Hardcoded Input Files ===
+FILE_A = "output/gts_dendropy_CAT_tauAB-10000.0_tauABC-10500.0_tauRoot-11000.0_pAB-10000_pABC-10000_pRoot-10000"
+FILE_B = "output/gts_dendropy_CAT_tauAB-10000.0_tauABC-10100.0_tauRoot-11100.0_pAB-10000_pABC-10000_pRoot-10000"
+MAX_TREES = 165
+OUTPUT_DIR = "crossmatch_results"
 
 
-print(f"Loaded {num_A} trees from sampleA and {num_B} from sampleB.")
-print(f"Total trees (all_trees): {len(sampleA_trees + sampleB_trees)}")
+# Load trees from a .tre file. Temporarily testing with only 50 trees from each sample.
+def load_trees(filename, max_trees=165):
+    return dendropy.TreeList.get(path=filename, schema="newick", preserve_underscores=True)[:max_trees]
 
-# Create label vector: 0 for sample A, 1 for sample B
-labels = [0] * num_A + [1] * num_B
+# Compute pairwise weighted RF distance matrix
+# From deepseek
+def compute_weighted_rf_matrix(trees):
+    n = len(trees)
+    matrix = np.zeros((n, n))
+    for i in range(n):
+        for j in range(i + 1, n):
+            dist = treecompare.weighted_robinson_foulds_distance(trees[i], trees[j])
+            matrix[i][j] = matrix[j][i] = dist  # symmetric matrix
+    return matrix
 
-# Initialize pairwise distance matrix
-n = num_A + num_B
-distance_matrix = np.zeros((n, n))
+# Perform the cross-match test and save results
+def run_crossmatch(fileA, fileB, out_dir="crossmatch_results", max_trees=50):
+    os.makedirs(out_dir, exist_ok=True)
 
-# Compute pairwise unweighted Robinson-Foulds distances
-comparison_count = 0
-total_comparisons = (len(all_trees) * (len(all_trees) - 1)) // 2
-print(f"Starting pairwise RF distance calculations ({total_comparisons} comparisons)...")
+    treesA = load_trees(fileA, max_trees)
+    treesB = load_trees(fileB, max_trees)
+    all_trees = treesA + treesB
+    labels = [0] * len(treesA) + [1] * len(treesB)
 
-for i in range(len(all_trees)):
-    for j in range(i + 1, len(all_trees)):
-        dist = treecompare.symmetric_difference(all_trees[i], all_trees[j])
-        distance_matrix[i][j] = dist
-        distance_matrix[j][i] = dist
+    print(f"Loaded {len(treesA)} trees from {fileA}")
+    print(f"Loaded {len(treesB)} trees from {fileB}")
 
-        comparison_count += 1
-        if comparison_count % 1000 == 0:
-            print(f"Completed {comparison_count}/{total_comparisons} comparisons...")
+    print("Computing weighted RF distance matrix...")
+    matrix = compute_weighted_rf_matrix(all_trees)
 
-# Run the cross match statistical test
-raw_result = crossmatchtest(labels, distance_matrix)
- 
-result = {
-    "a1": raw_result[0],
-    "Ea1": raw_result[1],
-    "Va1": raw_result[2],
-    "dev": raw_result[3],
-    "pval (exact)": raw_result[4],
-    "pval (normal approx)": raw_result[5],
-}
+    print("Running crossmatch test...")
+    a1, Ea1, Va1, dev, pval_exact, pval_normal = crossmatchtest(labels, matrix)
 
-# Print and save output
-print("\nCross-match test results:")
-for key, value in result.items():
-    print(f"{key}: {value}")
+    results = {
+        "a1": a1,
+        "Ea1": Ea1,
+        "Va1": Va1,
+        "dev": dev,
+        "pval (exact)": pval_exact,
+        "pval (normal approx)": pval_normal,
+    }
 
-os.makedirs("crossmatch_results", exist_ok=True)
-with open("crossmatch_results/crossmatch_output.txt", "w") as f:
-    for key, value in result.items():
-        f.write(f"{key}: {value}\n")
+    # Construct output filename from the input names
+    base1 = os.path.basename(fileA).replace(".tre", "")
+    base2 = os.path.basename(fileB).replace(".tre", "")
+    out_file = os.path.join(out_dir, f"crossmatch_{base1}_vs_{base2}.txt")
+
+    print(f"\nResults saved to: {out_file}")
+    with open(out_file, "w") as f:
+        for k, v in results.items():
+            print(f"{k}: {v}")
+            f.write(f"{k}: {v}\n")
+
+    return results
+
+# === Run test ===
+if __name__ == "__main__":
+    run_crossmatch(FILE_A, FILE_B, out_dir=OUTPUT_DIR, max_trees=MAX_TREES)

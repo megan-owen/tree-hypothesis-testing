@@ -1,5 +1,0 @@
-Tree selection:  random permutations of the tree set.
-Convergence:  Cauchy sequence of length 10 with epsilon = 1.0E-6
-Did not converge after 5000000 iterations.  Displaying last tree found.
-Standard Deviation if tree is mean: 44394.026996  Tree:
-(((C:20070.0045770666,D:21657.0367095714):0.0029930351,A:20322.0924104734):0.0118593662,B:20223.9289594096);

@@ -12,57 +12,37 @@ def choose(n,r):
 #bigN total number of observations
 #n total number of trees of one type (in one of the files)
 
-def crossmatchdist(bigN,n):
-    if (bigN%2 == 1):
-        return "The number of subjects, bigN, should be even"
-    I = int(bigN/2)
-    
-    dist = pd.DataFrame(index = ["a0", "a1", "a2", "pr"])
-    
-    for a1 in range(0,I+1):
-            a2 = (n-a1)/2
-            if ((math.floor(a2)==a2)&(a2>=0)):
-                    int_a2 = int(a2)
-                    a0 = I-(a1+int_a2)
-                    
-# Notice that a0 = I-(a1+int_a2) = I-(a1 + (n-a1)/2) = I - ( 2a1 + n - a1 )/2 = I - (n+ a1)/2 
-
-                    if (a0>=0):
-                            pr = math.factorial(I)/choose(bigN,n)
-                            pr = pr*(2**a1)/(math.factorial(a0)*math.factorial(a1)*math.factorial(int_a2))
-
-                            list1 = [[a0],[a1],[a2],[pr]]
-
-                            dist = pd.concat([dist,pd.DataFrame(list1, index = ["a0", "a1", "a2", "pr"])], axis=1)
-                   
-                        
-    dist.loc["cdf"] = dist.loc["pr"].cumsum() #cdf = cumulative distribution function
-    
-    print(dist)
-    
-    return dist.to_numpy()
-
 def crossmatchdist_df(bigN,n):
     if (bigN%2 == 1):
         return "The number of subjects, bigN, should be even"
-    I = int(bigN/2)
-    dist = pd.DataFrame(index = [1,2,3,4])
+    I = bigN // 2
+    dist = pd.DataFrame(index=["a0", "a1", "a2", "pr"]) 
 
-    for a1 in range(0,I+1):
-            a2 = (n-a1)/2
-            if ((math.floor(a2)==a2)&(a2>=0)):
-                    a0 = I-(a1+a2)
-                    if (a0>=0):
-                            pr = int(math.factorial(I))/choose(bigN,n)
-                            pr = int(pr*(2**a1))/(math.factorial(a0)*math.factorial(a1)*math.factorial(a2))
-                            list1 = [[a0],[a1],[a2],[pr]]
-                            dist = pd.concat([dist,pd.DataFrame(list1)],axis=0)
+    for a1 in range(0, I + 1):
+        a2 = (n - a1) / 2
+        if a2.is_integer() and a2 >= 0:
+            a2 = int(a2)
+            a0 = I - (a1 + a2)
+            if a0 >= 0:
+                a0 = int(a0)
+                pr = math.factorial(I) / choose(bigN, n)
+                pr *= (2 ** a1) / (math.factorial(a0) * math.factorial(a1) * math.factorial(a2))
+                list1 = [[a0], [a1], [a2], [pr]]
+                dist = pd.concat([dist, pd.DataFrame(list1)], axis=1)
                             
     
-    dist.loc[4] = dist.loc[3].cumsum()
-    
-    
+    # Add cumulative distribution row
+    dist.loc["cdf"] = dist.loc["pr"].cumsum()
     return dist
+
+def crossmatchdist(bigN, n):
+    if bigN % 2 == 1:
+        return "The number of subjects, bigN, should be even"
+    
+    dist_df = crossmatchdist_df(bigN, n)
+    print(dist_df)
+
+    return dist_df.to_numpy()
 
 def check_symmetric(a, tol=1e-8):
     return np.all(np.abs(a-a.T) < tol)
@@ -131,15 +111,12 @@ def crossmatchtest(z,D):
     n = sum(z0)
     
     
-    if(bigN < 340):        
-            dist = crossmatchdist(bigN,n)
-            pval = None
-            for j in range(len(dist[1])):
-                if(dist[1][j] == a1):
-                    pval = dist[3][j] #changed to 3, sum of pr's (??)
-
+    if bigN < 340:        
+        dist_df = crossmatchdist_df(bigN, n)  # Already labeled and structured
+        exact_pval = dist_df.loc["pr"][dist_df.loc["a1"] >= a1].sum()
+        pval = exact_pval
     else:
-        
+    
         pval = None
 
     
