@@ -5,15 +5,6 @@ java jar file that contains code for computing (Frechet) means of a set of trees
 
 Simulates gene trees and computes edge lengths using the SturmMean Java tool. Produces .tre, .csv, and mean tree summaries.
 
-- sampleA.tre, sampleB.tre:
-Two sets of 10,000 simulated gene trees generated from different population sizes (N=10000 and N=20000 respectively).
-
-- edge_lengths_*.csv:
-CSV files containing the edge length vectors of all gene CSV files storing edge lengths for each gene tree sample. Used for the difference-in-means test
-
-- frechet_mean_*.csv:
-CSV files summarizing the Fréchet mean tree computed from each gene tree sample.
-
 - mean_test_gene_tree.py:
 Implements a difference of means permutation test on edge lengths. Outputs histogram and p-value.
 Saves results in mean_test_results/.
@@ -27,3 +18,25 @@ Loads samples, computes RF distances, runs the cross-match test, and prints resu
 
 - compare_tests_pipeline.py
 (WORK IN PROGRESS) Script to compare the rejection power of both tests by running them 25 times on resampled data. Not yet finalized.
+
+
+
+
+
+
+HOW TO GUIDE:
+
+To generate two sets of gene trees using trees_to_edge_lengths.py (which uses argparse), you can run two separate commands from the command line(terminal) like this:
+
+python trees_to_edge_lengths.py --tau1 10000 --tau2 10500 --tau3 11000 --N1 10000 --N2 10000 --N3 10000 --out output/
+
+python trees_to_edge_lengths.py --tau1 10000 --tau2 10100 --tau3 11100 --N1 10000 --N2 10000 --N3 10000 --out output/
+
+Output Files Will Be Named Like:
+
+output/gts_dendropy_CAT_tauAB-10000_tauABC-10500_tauRoot-11000_pAB-10000_pABC-10000_pRoot-10000
+
+output/gts_dendropy_CAT_tauAB-10000_tauABC-10100_tauRoot-11100_pAB-10000_pABC-10000_pRoot-10000
+
+
+

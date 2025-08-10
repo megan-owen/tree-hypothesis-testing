@@ -8,12 +8,12 @@ from dendropy.calculate import treecompare  # import for RF distances
 # === Hardcoded Input Files ===
 FILE_A = "output/gts_dendropy_CAT_tauAB-10000.0_tauABC-10500.0_tauRoot-11000.0_pAB-10000_pABC-10000_pRoot-10000"
 FILE_B = "output/gts_dendropy_CAT_tauAB-10000.0_tauABC-10100.0_tauRoot-11100.0_pAB-10000_pABC-10000_pRoot-10000"
-MAX_TREES = 165
+MAX_TREES = 300
 OUTPUT_DIR = "crossmatch_results"
 
 
-# Load trees from a .tre file. Temporarily testing with only 50 trees from each sample.
-def load_trees(filename, max_trees=165):
+# Load trees from a .tre file. 
+def load_trees(filename, max_trees=300):
     return dendropy.TreeList.get(path=filename, schema="newick", preserve_underscores=True)[:max_trees]
 
 # Compute pairwise weighted RF distance matrix

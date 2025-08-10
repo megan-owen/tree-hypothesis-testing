@@ -1,82 +1,115 @@
-"""
-mean_test_gene_tree.py
-
-This script defines the `run_mean_test` function, which performs a permutation test
-to assess whether two sets of gene trees differ in their average edge lengths.
-
-Function: run_mean_test(fileA, fileB, save_path="mean_test_results", plot=False)
-- Inputs:
-    - fileA, fileB: Paths to CSV files containing edge lengths from two tree samples.
-    - save_path: Directory where results will be saved.
-    - plot: If True, saves a histogram of the null distribution.
-- Method:
-    - Computes observed difference in mean edge lengths.
-    - Performs 10,000 permutations to build a null distribution.
-    - Calculates a p-value by comparing the observed difference to the null.
-- Outputs:
-    - Text summary saved in mean_test_results/mean_test_output.txt.
-    - (Optional) Histogram saved as histogram_mean_diff.png.
-
-Returns:
-- A dictionary with:
-    - "observed_diff": observed difference in means
-    - "p_value": p-value from the permutation test
-"""
+import random
+import shutil
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-def run_mean_test(fileA, fileB, save_path="mean_test_results", plot=False):
+from eric_functions import weighted_distance
+from trees_to_edge_lengths import compute_frechet_mean, extract_frechet_mean
+
+
+# Hardcoded files for testing 
+# Tree samples
+FILE_A = "output/gts_dendropy_CAT_tauAB-10000.0_tauABC-10500.0_tauRoot-11000.0_pAB-10000_pABC-10000_pRoot-10000"
+FILE_B = "output/gts_dendropy_CAT_tauAB-10000.0_tauABC-10100.0_tauRoot-11100.0_pAB-10000_pABC-10000_pRoot-10000"
+
+# Precomputed Fréchet means for each sample
+MEAN_A = "output/frechet_mean_gts_dendropy_CAT_tauAB-10000.0_tauABC-10500.0_tauRoot-11000.0_pAB-10000_pABC-10000_pRoot-10000"
+MEAN_B = "output/frechet_mean_gts_dendropy_CAT_tauAB-10000.0_tauABC-10100.0_tauRoot-11100.0_pAB-10000_pABC-10000_pRoot-10000"
+
+# Number of permutations and output folder
+NUM_PERMUTATIONS = 100
+SAVE_PATH = "mean_test_results"
+
+#calling the edge lengths 
+def run_mean_test(fileA, fileB, real_mean_fileA, real_mean_fileB,save_path="mean_test_results",
+    jar_file="SturmMean_201102.jar",num_permutations=100, plot=False):
+
     os.makedirs(save_path, exist_ok=True)
+    temp_dir = os.path.join(save_path, "tmp_perm")
+    os.makedirs(temp_dir, exist_ok=True)
 
-    dfA = pd.read_csv(fileA).drop(columns=["topology"]).astype(float)
-    dfB = pd.read_csv(fileB).drop(columns=["topology"]).astype(float)
+    #Temporary files used per permutation
+    tree_file1 = os.path.join(temp_dir, "group1.tre")
+    tree_file2 = os.path.join(temp_dir, "group2.tre")
+    mean_file1 = os.path.join(temp_dir, "mean1.tre")
+    mean_file2 = os.path.join(temp_dir, "mean2.tre")
 
-    # Compute the observed mean difference
-    meanA = dfA.mean().mean()
-    meanB = dfB.mean().mean()
-    observed_diff = abs(meanA - meanB)
+    # Load tree sammples from input files 
+    with open(fileA, 'r') as f:
+        trees1 = [line.strip() for line in f if line.strip()]
+    with open(fileB, 'r') as f:
+        trees2 = [line.strip() for line in f if line.strip()]
 
-    # Combine both datasets and prepare for permutation test
-    combined = pd.concat([dfA, dfB], ignore_index=True)
-    n_A = len(dfA)
-    num_simulations = 10000
-    simulated_diffs = []
+    all_trees = trees1 + trees2
+    labels = [0] * len(trees1) + [1] * len(trees2)
 
-    for i in range(num_simulations):
-        shuffled = combined.sample(frac=1, random_state=i).reset_index(drop=True)
-        groupA_sim = shuffled.iloc[:n_A]
-        groupB_sim = shuffled.iloc[n_A:]
-        sim_diff = abs(groupA_sim.mean().mean() - groupB_sim.mean().mean())
-        simulated_diffs.append(sim_diff)
+    # Compute observed test statistic (distance between the true frechet means) from real Frechet means 
+    mean1 = extract_frechet_mean(real_mean_fileA)
+    mean2 = extract_frechet_mean(real_mean_fileB)
+    observed_distance = weighted_distance(mean1, mean2)
 
-    p_value = np.mean(np.array(simulated_diffs) >= observed_diff)
+    distances = []
 
-    # Plot the histogram if requested
-    if plot:
-        plt.hist(simulated_diffs, bins=50, alpha=0.7, label="Null distribution")
-        plt.axvline(observed_diff, color="red", linestyle="--", label="Observed diff")
-        plt.xlabel("Difference in Means")
-        plt.ylabel("Frequency")
-        plt.title("Permutation Test on Edge Lengths of Gene Trees")
-        plt.legend()
-        plt.tight_layout()
-        plt.savefig(f"{save_path}/histogram_mean_diff.png")
-        plt.close()
+    for i in range(num_permutations):
+        print(f"\n=== Running permutation {i+1}/{num_permutations} ===")
 
-    # Save numerical result
-    with open(f"{save_path}/mean_test_output.txt", "w") as f:
-        f.write("Difference of Means Test:\n")
-        f.write("-------------------------\n")
-        f.write(f"Observed mean difference: {observed_diff:.4f}\n")
-        f.write(f"P-value from permutation test: {p_value:.4f}\n")
+        # Shuffle trees and split into two groups 
+        shuffled = list(zip(all_trees, labels))
+        random.shuffle(shuffled)
+        group1 = [tree for tree, _ in shuffled[:len(trees1)]]
+        group2 = [tree for tree, _ in shuffled[len(trees1):]]
+
+        # Write the shuffled groups to temporary files
+        with open(tree_file1, 'w') as f:
+            f.write("\n".join(group1) + "\n")
+        with open(tree_file2, 'w') as f:
+            f.write("\n".join(group2) + "\n")
+
+        # Compute Frechet means and distance for the permuted groups
+        compute_frechet_mean(tree_file1, mean_file1)
+        compute_frechet_mean(tree_file2, mean_file2)
+
+        perm_mean1 = extract_frechet_mean(mean_file1)
+        perm_mean2 = extract_frechet_mean(mean_file2)
+        dist = weighted_distance(perm_mean1, perm_mean2)
+        distances.append(dist)
+
+    #compute the p-value 
+    p_value = sum(d >= observed_distance for d in distances) / num_permutations
+
+    # Save results 
+    result_file = os.path.join(save_path, "mean_test_output.txt")
+    with open(result_file, "w") as f:
+        f.write("Permutation Test on Frechet Means:\n")
+        f.write("----------------------------------\n")
+        f.write(f"Observed Frechet mean distance: {observed_distance:.6f}\n")
+        f.write(f"P-value from permutation test: {p_value:.6f}\n")
         if p_value < 0.05:
             f.write("Null hypothesis rejected at 0.05 level.\n")
         else:
             f.write("Failed to reject the null hypothesis at 0.05 level.\n")
 
+    if plot:
+        plt.hist(distances, bins=30, color="skyblue", edgecolor="black")
+        plt.axvline(observed_distance, color="red", linestyle="--", label=f"Observed = {observed_distance:.2f}")
+        plt.title("Permutation Test: Distance Between Frechet Means")
+        plt.xlabel("Distance")
+        plt.ylabel("Frequency")
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+
+    # Clean up and delete temporary files
+    shutil.rmtree(temp_dir)
+
     return {
-        "observed_diff": observed_diff,
+        "observed_diff": observed_distance,
         "p_value": p_value
     }
+
+# === Run Test ===
+if __name__ == "__main__":
+    run_mean_test(FILE_A, FILE_B, MEAN_A, MEAN_B, plot=True)
+

@@ -1,6 +1,7 @@
 import dendropy as dpy
 from dendropy.simulate import treesim
 import os
+import argparse
 import pandas as pd
 from subprocess import *
 import argparse
@@ -13,8 +14,16 @@ parser.add_argument("--N1", type=int)
 parser.add_argument("--N2", type=int)
 parser.add_argument("--N3", type=int)
 parser.add_argument("--out", type=str)
+parser.add_argument("--force", type=str)
 args = parser.parse_args()
 
+
+
+#How to generate the gene trees from command line:
+#First Tree:
+#python trees_to_edge_lengths.py --tau1 10000 --tau2 10500 --tau3 11000 --N1 10000 --N2 10000 --N3 10000 --out output/
+#Second Tree:
+#python trees_to_edge_lengths.py --tau1 10000 --tau2 10100 --tau3 11100 --N1 10000 --N2 10000 --N3 10000 --out output/
 
 
 #   Notes: 
@@ -29,10 +38,19 @@ args = parser.parse_args()
 #               ex. gt_edge_lengths_CAT_tauAB-10000_tauABC-20000_tauRoot-30000_N1-10000_N2-10000_N3-10000.csv
 #
 
-# directory for output with / at end
-#OUTDIR = "/Users/megan/Dropbox/RESEARCH/AIM_Square/BHVSummaries/BHV-contours/simulations_for_paper_fall2024/parameters_from_file_names/anomaly_tauAB_10000_tauABC_20000_tauRoot_20100_(x0.01_y1)/"
-#OUTDIR = "/Users/megan/Dropbox/RESEARCH/AIM_Square/BHVSummaries/BHV-contours/simulations_for_paper_fall2024/for_R/star/"
-OUTDIR = "./" # current directory  
+OUTDIR = "output/"
+
+if not os.path.exists(OUTDIR):
+    os.makedirs(OUTDIR)
+
+output = (
+    f"{OUTDIR}gts_dendropy_CAT_"
+    f"tauAB-{args.tau1}_"
+    f"tauABC-{args.tau2}_"
+    f"tauRoot-{args.tau3}_"
+    f"pAB-{args.N1}_pABC-{args.N2}_pRoot-{args.N3}"
+)
+
 
 
 SIMULATE_GENE_TREES = True      # set to false if using an existing gene tree file
@@ -145,7 +163,7 @@ def main():
         taxa_list = ["A","B","C","D"]
         char_btw_taxa = ""
     else:
-        gene_tree_file = GENE_TREE_FILE
+        gene_tree_file = GENE_TREE_FILE # type: ignore
         taxa_list = TAXA_LIST
         char_btw_taxa = CHAR_BTW_TAXA
         
@@ -161,11 +179,11 @@ def main():
     # and each column representing a clade and containing the edge length in the tree
     ####################################################################################
 
-    if not os.path.exists(csv_file):
-        newick_to_csv(gene_tree_file, csv_file, character_btw_taxa = char_btw_taxa, taxa_list = taxa_list)
+   # if not os.path.exists(csv_file):
+   #     newick_to_csv(gene_tree_file, csv_file, character_btw_taxa = char_btw_taxa, taxa_list = taxa_list)
 
-    else:
-        print("Skipping generating CSV file of edge lengths -",csv_file,"already exists")
+   #  else:
+   #     print("Skipping generating CSV file of edge lengths -",csv_file,"already exists")
 
 
     ######################################################################################
@@ -244,9 +262,15 @@ def simulate_gene_trees(tau1, tau2, tau3, N1, N2, N3, pop_size, num_gene_trees, 
                     N2,             # CD
                     N3]             # ABCD (root)
 
-    if os.path.exists(gene_tree_file):
-        print("Skipping simulating gene trees - ",gene_tree_file, " already exists")
-        return
+    # Add this to parse --force
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--force", action="store_true", help="Force resimulation even if output exists")
+        args = parser.parse_args()
+
+        if os.path.exists(output) and not args.force:
+           print("Skipping simulating gene trees - already exists")
+           return
+        
 
     print("Species tree is",sp_tree_str)
 
@@ -483,12 +507,20 @@ def compute_frechet_mean(tree_file, frechet_mean_file):
 # and store the edge length information in a CSV file.
 #########################################################################
 
-def extract_frechet_mean(frechet_mean_file, mean_csv, character_btw_taxa = "-", taxa_list = None):
-    with open(frechet_mean_file,'r') as fin:
+def extract_frechet_mean(frechet_mean_file, mean_csv=None, character_btw_taxa="-", taxa_list=None):
+    with open(frechet_mean_file, 'r') as fin:
         all_lines = fin.readlines()
-    mean_tree = all_lines[4]   # get the fifth line in the Frechet mean file
+        
+    for line in reversed(all_lines):
+        line = line.strip()
+        if line.startswith("(") and line.endswith(";"):
+            return line
 
-    newick_to_csv(mean_tree,mean_csv,in_trees_are_file = False, character_btw_taxa = character_btw_taxa, taxa_list = taxa_list)
+    raise ValueError("No valid Newick tree found in the Frechet mean file.")
+
+# get the fifth line in the Frechet mean file
+
+    #newick_to_csv(mean_tree,mean_csv,in_trees_are_file = False, character_btw_taxa = character_btw_taxa, taxa_list = taxa_list)
 
 
 ###########################################################################
@@ -500,7 +532,7 @@ def extract_frechet_mean(frechet_mean_file, mean_csv, character_btw_taxa = "-", 
 ###########################################################################
 
 def scale_trees(in_file, out_file, x):
-    trees = dendropy.Tree.get(
+    trees = dpy.Tree.get(
                 path= in_file,
                 schema='newick',
                 rooting= 'default-rooted')
