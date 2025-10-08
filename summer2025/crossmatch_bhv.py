@@ -17,7 +17,7 @@ PhyloTree = jpype.JClass("distanceAlg1.PhyloTree")
 # === Inputs ===
 FILE_A = "output/gts_dendropy_CAT_tauAB-10000.0_tauABC-10500.0_tauRoot-11000.0_pAB-10000_pABC-10000_pRoot-10000"
 FILE_B = "output/gts_dendropy_CAT_tauAB-10000.0_tauABC-10100.0_tauRoot-11100.0_pAB-10000_pABC-10000_pRoot-10000"
-MAX_TREES = 300
+MAX_TREES = 150
 OUTPUT_DIR = "crossmatch_results"
 
 # Simple file loader: assumes proper Newick formatting 

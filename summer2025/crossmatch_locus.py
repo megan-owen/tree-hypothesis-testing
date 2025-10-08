@@ -2,6 +2,7 @@ import os
 import time
 import csv
 from datetime import datetime
+import random
 
 import numpy as np
 import dendropy
@@ -65,6 +66,7 @@ def run_crossmatch(treesA, treesB, out_dir, locus_id):
     os.makedirs(out_dir, exist_ok=True)
 
     all_trees = treesA + treesB
+    assert len(all_trees) == len(treesA) + len(treesB)
     labels = [0] * len(treesA) + [1] * len(treesB)
 
     print(f"  Computing weighted RF matrix for Locus {locus_id} "
@@ -93,8 +95,10 @@ def run_crossmatch(treesA, treesB, out_dir, locus_id):
 if __name__ == "__main__":
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+    random.seed(42)  # for reproducibility
+
     loci_processed_since_fsync = 0
-    for locus_id in range(152, 305):  
+    for locus_id in range(1, 305):  
         file_path = os.path.join(ROOTED_DIR, f"rootedtree_{locus_id}.txt")
         start_wall = time.time()
         row = {
@@ -120,12 +124,41 @@ if __name__ == "__main__":
 
             with open(file_path, "r") as f:
                 tree_lines = [line.strip() for line in f if line.strip()]
+            '''
+           # Check if we have enough trees for random selection
+            if len(tree_lines) <  340:  #The max this can be is 339 otherwise our exact p-value will return none.
+                raise ValueError(f"Expected at least 339 lines for random selection; got {len(tree_lines)}")
 
-            if len(tree_lines) < 551:
-                raise ValueError(f"Expected at least 551 lines; got {len(tree_lines)}")
+            # Randomly select 165 trees for group A using indices
+            first_half = list(range(0, 500))
+            second_half = list(range(500, 1000))
+            indicesA = random.sample(first_half, 40)
+            indicesB = random.sample(second_half, 40)
+            '''
 
-            treesA_lines = tree_lines[:50]
-            treesB_lines = tree_lines[500:550]
+#THIS CODE IS TO TEST ALL 1000 TREES WITHOUT SEPERATING THE SAMPLES
+            
+              # Randomly select 150 trees for group A using indices
+            all_indices = list(range(len(tree_lines)))
+            indicesA = random.sample(all_indices, 40)
+
+            # Get remaining indices and select 150 for group B
+            remaining_indices = [i for i in all_indices if i not in indicesA]
+            if len(remaining_indices) < 151:
+                raise ValueError(f"Not enough remaining trees for group B: {len(remaining_indices)}")
+            indicesB = random.sample(remaining_indices, 40)          
+            
+            
+            
+
+            # minimal randomness sanity check
+            overlap = set(indicesA) & set(indicesB)
+            print(f"[check] locus {locus_id}: nA={len(indicesA)} nB={len(indicesB)} overlap={len(overlap)}")
+            assert not overlap, "Random split overlap detected!"
+
+            # Extract the trees using indices
+            treesA_lines = [tree_lines[i] for i in indicesA]
+            treesB_lines = [tree_lines[i] for i in indicesB]
 
             treesA = load_trees_from_lines(treesA_lines)
             treesB = load_trees_from_lines(treesB_lines)

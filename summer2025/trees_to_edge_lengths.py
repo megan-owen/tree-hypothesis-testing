@@ -494,7 +494,7 @@ def newick_to_csv(in_trees,csv_file,character_btw_taxa = "-", in_trees_are_file 
 #####################################################################################
 
 def compute_frechet_mean(tree_file, frechet_mean_file):
-    command = "java -jar " + JAR_FILE + " -a rand_perm -o " + frechet_mean_file + " -c 10 -e 0.000001 -n 5000000 " + tree_file
+    command = "java -jar " + JAR_FILE + " -a rand_perm -o " + frechet_mean_file + " -c 10 -e 0.00001 -n 100000 " + tree_file
     print("Calling: " + command)
     call(command.split())
 
