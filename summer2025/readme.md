@@ -22,6 +22,9 @@ Cross-match test using BHV distances computed via gtp.jar through JPype.
 - BHV FILE
 Practice Calls using Jpype calling Java classes we already have in a python script.
 
+Tested Crossmatches for Locus trees using BHV and Weighted Robinsons-Foulds but decided to stick with Robinsons-Fould since there wasn't much difference in how much time it took to compute them both.
+
+
 
 
 - The mean_test_results/folder contains output from the permutation (mean) test performed across 304 loci.
