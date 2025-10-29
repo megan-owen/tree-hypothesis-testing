@@ -1,5 +1,0 @@
-Permutation Test on Frechet Means:
-----------------------------------
-Observed Frechet mean distance: 853.459890
-P-value from permutation test: 0.000000
-Null hypothesis rejected at 0.05 level.
