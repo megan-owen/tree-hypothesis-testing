@@ -1,86 +1,104 @@
-This project implements a full statistical pipeline for comparing two sets of gene trees using Fréchet means, difference-in-means tests, and cross-match tests under both weighted Robinson–Foulds (wRF) and BHV distance metrics.
+# Tree Hypothesis Testing Project (`summer2025`)
 
+This project implements a complete statistical pipeline for comparing two sets of **gene trees** using **Fréchet means**, **difference-in-means permutation tests**, and **cross-match tests** under both **weighted Robinson–Foulds (wRF)** and **BHV (Billera–Holmes–Vogtmann)** distance metrics.
 
+---
 
-`SturmMean_201102.jar`
-Java tool for computing Fréchet (Sturm) means of a set of trees.
+## 🧩 Overview of Components
 
-`gtp.jar`
-Java tool for BHV tree-space geodesics (used via JPype or CLI to compute BHV distances).
+### Java Tools
+- **`SturmMean_201102.jar`** – Computes Fréchet (Sturm) means of a set of trees.  
+- **`gtp.jar`** – Computes BHV tree-space geodesics (used via JPype or command line).
 
-`trees_to_edge_lengths.py`
-Simulates gene trees using DendroPy, computes edge lengths via `SturmMean` (Fréchet mean workflow), and writes outputs.
+### Python Scripts
+- **`trees_to_edge_lengths.py`** – Simulates gene trees using DendroPy, computes edge lengths via Fréchet mean (SturmMean), and writes outputs.  
+- **`mean_test_gene_tree.py`** – Performs a **difference-of-means permutation test** on Fréchet mean edge-length features.  
+- **`crossmatch_functions.py`** – Implements the **Cross-Match test** on a set of items given a distance matrix.  
+- **`crossmatch_test_gene_trees.py`** – Runs Cross-Match test using **weighted Robinson–Foulds (wRF)** distances from DendroPy.  
+- **`crossmatch_bhv.py`** – Runs Cross-Match test using **BHV distances** computed via `gtp.jar` through JPype.  
+- **`crossmatch_sample.py`** – Generalized script for performing Cross-Match tests on custom datasets.  
+- **`eric_functions.py`** – Utility functions for additional analyses.  
 
-`mean_test_gene_tree.py`
-Performs a difference-of-means permutation test on edge-length features derived from the Fréchet means.
+### Directories
+- **`BHV/`** – Practice scripts for JPype calls to Java classes from Python.  
+- **`Locus Analysis/`** – Visualization suite that aggregates and compares test results across loci, producing summary graphs and heatmaps.  
+- **`batch_output/`** – output directory replacing the old `mean_test_results/`.  
+- **`crossmatch_results_summary/`** – Contains per-locus Cross-Match outputs and summary CSVs.  
+- **`rootedtrees/`** – Input dataset (Dryad) with 304 files, each containing 1000 rooted trees.  
 
-`crossmatch_functions.py`
-Implements the cross-match test on a set of items given a distance matrix.
+---
 
-`crossmatch_test_gene_trees.py`
-Cross-match test using weighted Robinson–Foulds (wRF) distances from DendroPy.
+## 📊 Test Overview
 
-`crossmatch_bhv.py`
-Cross-match test using BHV distances computed via `gtp.jar` through JPype.
+Both **wRF** and **BHV** Cross-Match tests were benchmarked on locus trees.  
+The **Robinson–Foulds** implementation was ultimately chosen for efficiency and comparable runtime to the BHV approach.
 
-`BHV/`
-Practice scripts for JPype calls to Java classes from Python.
+---
 
-Both wRF and BHV cross-match tests were benchmarked on locus trees; the Robinson–Foulds implementation was chosen for efficiency and comparable runtime.
+## 📁 Output Summary
 
+### Mean Test Results
+- The folder `mean_test_results/` (now replaced by `batch_output/`) contains permutation test outputs across **304 loci**.
+- **Graphs:** Histograms available for loci **1–304**.  
+- **CSV Summary:** `new_permutation_summary.csv` includes all loci (1–304), summarizing **p-values** and **test statistics** comparing the two gene tree sets.
 
+---
 
+## ⚙️ How to Run the Pipeline
 
-The folder `mean_test_results/` contains output from the permutation (mean) test performed across 304 loci.
+### 1️⃣ Generate Gene Trees
 
-Graphs: Histograms are available for loci `1–75` and `152–304`.
+Use `trees_to_edge_lengths.py` (accepts `argparse` parameters):
 
-CSV Results: The summary file `mean_test_summary.csv` includes data for all loci (`1–304`) and summarizes the p-values and test statistics comparing the two gene tree sets.
+```bash
+python trees_to_edge_lengths.py --tau1 10000 --tau2 10500 --tau3 11000 \
+--N1 10000 --N2 10000 --N3 10000 --out output/
 
+python trees_to_edge_lengths.py --tau1 10000 --tau2 10100 --tau3 11100 \
+--N1 10000 --N2 10000 --N3 10000 --out output/
+```
 
+**Example Output Files:**
+```
+output/gts_dendropy_CAT_tauAB-10000_tauABC-10500_tauRoot-11000_pAB-10000_pABC-10000_pRoot-10000
+output/gts_dendropy_CAT_tauAB-10000_tauABC-10100_tauRoot-11100_pAB-10000_pABC-10000_pRoot-10000
+```
 
-HOW TO GUIDE FOR GENE TREES:
+---
 
-To generate two sets of gene trees using `trees_to_edge_lengths.py` (which uses `argparse`), you can run two separate commands from the command line(terminal) like this:
+### 2️⃣ Run the Mean (Permutation) Test
 
+```bash
+python mean_test_gene_tree.py
+```
 
-`python trees_to_edge_lengths.py --tau1 10000 --tau2 10500 --tau3 11000 --N1 10000 --N2 10000 --N3 10000 --out output/`
+> ⚠️ File paths are hardcoded; update them if your output filenames differ.  
+> Output is saved to `mean_test_output.txt`.
 
-`python trees_to_edge_lengths.py --tau1 10000 --tau2 10100 --tau3 11100 --N1 10000 --N2 10000 --N3 10000 --out output/`
+---
 
+### 3️⃣ Run the Cross-Match Tests
 
-Output Files Will Be Named Like:
+**Weighted Robinson–Foulds (wRF):**
+```bash
+python crossmatch_test_gene_trees.py
+```
 
-`output/gts_dendropy_CAT_tauAB-10000_tauABC-10500_tauRoot-11000_pAB-10000_pABC-10000_pRoot-10000`
+**BHV Distance (via gtp.jar):**
+```bash
+python crossmatch_bhv.py
+```
 
-`output/gts_dendropy_CAT_tauAB-10000_tauABC-10100_tauRoot-11100_pAB-10000_pABC-10000_pRoot-10000`
+> ⚠️ Both scripts use hardcoded input paths — modify as needed.
 
-Now to run Mean (Permutation testing) put this in the terminal.
+---
 
-`python mean_test_gene_tree.py`
+## 🧠 Notes
 
-File names are hardcoded in the mean_test_gene_tree so change them if you dont use the same parametes to generate the gene trees.
-
-`mean_test_gene_tree.py` output is saved in `mean_test_output.txt`
-
-TO RUN CROSSMATCH TEST WITH WEIGHTED ROBINSON FOULD:
-
-`python crossmatch_test_gene_trees.py`
-
-Files are also hardcoded in this script. 
-
-TO RUN CROSSMATCH TEST USING BHV RUN:
-
-`python crossmatch_bhv.py`  
-
-Files are also hardcoded in this script. 
-
-
-
-
-
-
-
+- The project’s current data and analysis results are located in:
+  - `batch_output/` → mean test results  
+  - `crossmatch_results_summary/` → per-locus cross-match statistics  
+  - `Locus Analysis/` → scripts for comparing test outcomes across loci
 
 
 
