@@ -1,20 +1,29 @@
 import os
 import math
 import itertools
+import re
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import seaborn as sns
 
 # ====================== Settings ======================
 ALPHA = 0.05
 
-# Inputs (exact schemas)
-MEAN_CSV      = "mean_test_results/mean_test_summary.csv"                 # Locus,Null_Min,Null_Max,Null_Mean,Test_Statistic,P_Value
-CROSS500_CSV  = "crossmatch_results_summary/crossmatch_results_locus_500.csv"    # Locus,nA,nB,a1,Ea1,Va1,dev,pval_exact,pval_normal,elapsed_seconds,timestamp,status,error
-CROSS1000_CSV = "crossmatch_results_summary/crossmatch_results_locus_1000.csv"   # same schema
+# Input file paths
+MEAN_CSV      = "batch_output/new_permutation_summary.csv"
+CROSS500_CSV  = "crossmatch_results_summary/crossmatch_results_locus_500.csv"
+CROSS1000_CSV = "crossmatch_results_summary/crossmatch_results_locus_1000.csv"
 
-OUTDIR = "locus_analysis_outputs"
+# Additional binary test results to merge into heatmap
+EXTRA_BIN_CSVS = [
+    ("mds_binary", "Locus Analysis/mds.csv"),
+    ("odd","Locus Analysis/odd_cases_binary.csv"),
+    ("Extreme odd","Locus Analysis/odd_cases_binary.csv"),
+]
+
+OUTDIR = "Locus Analysis/locus_analysis_outputs"
 os.makedirs(OUTDIR, exist_ok=True)
 
 # Table image settings
@@ -22,20 +31,78 @@ TABLE_MAX_ROWS = 60
 TABLE_DPI      = 300
 # =====================================================
 
-#This script was made to analyze and create graphs for data produced from the crossmatch results for locus trees. Chatgpt was used to help create these functions.
+# This script analyzes and visualizes crossmatch test results for locus trees.
+# It compares permutation test p-values with crossmatch p-values at different sample sizes.
 
-# ------------------------ Loaders ------------------------
+# ======================== Data Loaders ========================
+
+# Load p-values from permutation test CSV.
+# Handles two schemas: (1) filename-based, (2) direct Locus column.
+# Auto-detects if header row is missing.
 def load_mean(path: str) -> pd.DataFrame:
-    use_cols = ["Locus","Null_Min","Null_Max","Null_Mean","Test_Statistic","P_Value"]
-    df = pd.read_csv(path, usecols=use_cols, encoding="utf-8-sig")
-    df = df.dropna(subset=["Locus","P_Value"]).copy()
-    df["Locus"]  = df["Locus"].astype(int)
-    df["mean_p"] = pd.to_numeric(df["P_Value"], errors="coerce")
-    df = df.dropna(subset=["mean_p"])[["Locus","mean_p"]].sort_values("Locus")
-    df = df.drop_duplicates(subset=["Locus"], keep="last")
-    return df
+    # Check if file has proper header
+    df_test = pd.read_csv(path, nrows=1, sep=None, engine="python", encoding="utf-8-sig")
+    first_col = str(df_test.columns[0]).lower()
+    has_header = "filename" in first_col or "locus" in first_col or "rootedtree" not in first_col.lower()
+    
+    if has_header:
+        df = pd.read_csv(path, sep=None, engine="python", encoding="utf-8-sig", on_bad_lines="skip")
+    else:
+        # No header - manually specify expected columns
+        df = pd.read_csv(
+            path, 
+            header=None,
+            names=["filename", "n_perm", "null_min", "null_max", "null_mean", "test_stat", "p_value"],
+            sep=None, 
+            engine="python", 
+            encoding="utf-8-sig", 
+            on_bad_lines="skip"
+        )
+
+    cols = {c.lower(): c for c in df.columns}
+    
+    # Schema 1: filename column (e.g., rootedtree_123.txt)
+    if "filename" in cols:
+        pcol = cols.get("p_value") or cols.get("p value") or cols.get("pvalue")
+        if not pcol:
+            for c in df.columns:
+                if re.fullmatch(r"p[_\s-]*value", c, flags=re.I):
+                    pcol = c
+                    break
+        if not pcol:
+            raise ValueError(f"Could not find p_value column. Available: {list(df.columns)}")
+        
+        tmp = df[[cols["filename"], pcol]].copy()
+        tmp.columns = ["filename", "mean_p"]
+        # Extract locus number from filename (rootedtree_123.txt -> 123)
+        tmp["Locus"] = tmp["filename"].astype(str).str.extract(r"(\d+)").astype(float)
+        tmp["mean_p"] = pd.to_numeric(tmp["mean_p"], errors="coerce")
+        out = tmp.dropna(subset=["Locus","mean_p"]).copy()
+        out["Locus"] = out["Locus"].astype(int)
+        return out.sort_values("Locus").drop_duplicates("Locus", keep="last")[["Locus","mean_p"]]
+    
+    # Schema 2: direct Locus column
+    if "locus" in cols:
+        pcol = cols.get("p_value") or cols.get("p value") or cols.get("pvalue")
+        if pcol is None:
+            for c in df.columns:
+                if re.fullmatch(r"p[_\s-]*value", c, flags=re.I):
+                    pcol = c
+                    break
+        if pcol:
+            out = df[[cols["locus"], pcol]].copy()
+            out.columns = ["Locus", "mean_p"]
+            out["Locus"]  = pd.to_numeric(out["Locus"], errors="coerce")
+            out["mean_p"] = pd.to_numeric(out["mean_p"], errors="coerce")
+            out = out.dropna(subset=["Locus","mean_p"])
+            out["Locus"] = out["Locus"].astype(int)
+            return out.sort_values("Locus").drop_duplicates("Locus", keep="last")[["Locus","mean_p"]]
+
+    raise ValueError(f"Unsupported schema. Expected (Locus, p_value) or (filename, p_value). Found: {list(df.columns)}")
 
 
+# Load crossmatch summary CSV with p-values per sample size.
+# Returns tidy format: Locus, n, pval_exact, pval_normal, source.
 def load_cross(path: str, source_label: str) -> pd.DataFrame:
     names = ["Locus","nA","nB","a1","Ea1","Va1","dev",
              "pval_exact","pval_normal","elapsed_seconds","timestamp","status","error"]
@@ -56,8 +123,7 @@ def load_cross(path: str, source_label: str) -> pd.DataFrame:
     df = df.dropna(subset=["Locus","nA","nB","pval_exact"]).copy()
     df["Locus"] = df["Locus"].astype(int)
 
-    equal = df["nA"].eq(df["nB"])\
-
+    equal = df["nA"].eq(df["nB"])
     df["n"] = np.where(equal, df["nA"], np.minimum(df["nA"], df["nB"]))
     df["n"] = df["n"].astype(int)
     if not equal.all():
@@ -68,12 +134,8 @@ def load_cross(path: str, source_label: str) -> pd.DataFrame:
     return df[["Locus","n","pval_exact","pval_normal","source"]].sort_values(["Locus","n"])
 
 
-# ------------------- Build comparison frames -------------------
+# Pivot crossmatch results into wide format: Locus, crossmatch500_n50, crossmatch1000_n50, etc.
 def crossmatch_wide(c500: pd.DataFrame, c1000: pd.DataFrame, use_normal=False) -> pd.DataFrame:
-    """
-    Returns wide table with columns:
-      Locus, crossmatch500_n50, crossmatch1000_n50, crossmatch500_n100, crossmatch1000_n100, crossmatch500_n150, crossmatch1000_n150
-    """
     val_col = "pval_normal" if use_normal else "pval_exact"
     w500 = c500.pivot(index="Locus", columns="n", values=val_col)
     w1000 = c1000.pivot(index="Locus", columns="n", values=val_col)
@@ -83,13 +145,10 @@ def crossmatch_wide(c500: pd.DataFrame, c1000: pd.DataFrame, use_normal=False) -
     return wide
 
 
-# ------------------ Table to PNG ------------------
+# ======================== Visualization Utilities ========================
+
+# Render dataframe as PNG table image.
 def save_table_image(df: pd.DataFrame, outpath: str, max_rows=60, dpi=300, rows="head"):
-    """
-    Render a dataframe to a PNG using matplotlib's table artist.
-    - rows="head" -> take the first max_rows after sorting by Locus ascending
-    - rows="all"  -> render all rows (may produce a very tall image)
-    """
     import matplotlib.pyplot as plt
 
     data = df.copy()
@@ -128,19 +187,14 @@ def save_table_image(df: pd.DataFrame, outpath: str, max_rows=60, dpi=300, rows=
     plt.close()
 
 
-# ---------------------- Plot helpers ----------------------
 def save_png(outbase):
-    """Save only PNG."""
     plt.savefig(f"{outbase}.png", dpi=300, bbox_inches="tight")
     plt.close()
 
 
+# Plot p-values ordered by specified metric with alpha threshold line.
 def plot_line_with_mean(sub: pd.DataFrame, n: int, outbase: str,
                         order_by: str = "mean", desc: bool = True):
-    """
-    order_by: 'mean' | 'cross500' | 'cross1000'
-    desc: True = highest p-value first
-    """
     aliases = {"orange": "cross500", "green": "cross1000"}
     order_by = aliases.get(order_by, order_by)
     metric_map = {
@@ -157,7 +211,6 @@ def plot_line_with_mean(sub: pd.DataFrame, n: int, outbase: str,
     sub = sub.dropna(subset=[key]).sort_values([key, "Locus"], ascending=[not desc, True])
 
     x = np.arange(1, len(sub) + 1)
-
     plt.figure(figsize=(11,5))
 
     if "mean_p" in sub.columns and sub["mean_p"].notna().any():
@@ -184,11 +237,10 @@ def plot_line_with_mean(sub: pd.DataFrame, n: int, outbase: str,
     save_png(os.path.join(OUTDIR, outbase))
 
 
-# ---------------------- Binarized agreement toolkit ----------------------
+# ======================== Binary Analysis ========================
+
+# Convert test columns to binary (0/1) based on alpha threshold or custom rules.
 def binarize_tests(df: pd.DataFrame, specs: dict) -> pd.DataFrame:
-    """
-    Produce a binary matrix of tests (1 = two clusters) based on p-value alpha thresholds (or custom rules).
-    """
     out = {}
     for col, rule in specs.items():
         if col not in df.columns:
@@ -210,6 +262,7 @@ def binarize_tests(df: pd.DataFrame, specs: dict) -> pd.DataFrame:
     return bin_df
 
 
+# Compute summary stats (positives, total, rate) for binary columns.
 def summarize_binary(bin_df: pd.DataFrame) -> pd.DataFrame:
     cols = list(bin_df.columns)
     pos_counts = bin_df[cols].sum().sort_values(ascending=False)
@@ -218,7 +271,47 @@ def summarize_binary(bin_df: pd.DataFrame) -> pd.DataFrame:
     return pd.concat([pos_counts.rename("Positives"), totals.rename("N"), rate], axis=1)
 
 
-# ------------------------- Summary Table Function -------------------------
+# Generate binary heatmap showing which tests rejected H0 for each locus.
+def plot_binary_heatmap(binary_csv, out_png):
+    df = pd.read_csv(binary_csv).sort_values("Locus")
+
+    # Exclude n=100 and n=150 from heatmap (focus on n=50)
+    EXCLUDE_FOR_HEATMAP = {"crossmatch500_n100", "crossmatch1000_n100","crossmatch500_n150", "crossmatch1000_n150"}
+    cols = [c for c in df.columns if c != "Locus" and c not in EXCLUDE_FOR_HEATMAP]
+
+    if not cols:
+        print("[WARN] No binary columns found to plot.")
+        return
+
+    for c in cols:
+        df[c] = pd.to_numeric(df[c], errors="coerce").round().clip(0, 1).fillna(0).astype(int)
+
+    heatmap_data = df.set_index("Locus")[cols].T
+
+    plt.figure(figsize=(0.25 * len(df) + 3, 2 + 0.35 * len(cols)))
+
+    cmap_gray = mcolors.ListedColormap(["white", "0.5"])
+
+    ax = sns.heatmap(
+        heatmap_data,
+        cmap=cmap_gray,
+        cbar=False,
+        linewidths=0.5,
+        linecolor="black",
+        square=True
+    )
+
+    ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
+    plt.title("Binary Signals by Locus")
+    plt.xlabel("Locus")
+    plt.ylabel("")
+    plt.tight_layout()
+    os.makedirs(os.path.dirname(out_png), exist_ok=True)
+    plt.savefig(out_png, dpi=300, bbox_inches="tight")
+    plt.close()
+
+
+# Build summary table: rejections, totals, mean p-value per method and sample size.
 def create_summary_table(wide: pd.DataFrame) -> pd.DataFrame:
     summary_data = []
     for n in [50, 100, 150]:
@@ -257,36 +350,15 @@ def create_summary_table(wide: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(summary_data)
 
 
-def plot_binary_heatmap(binary_csv, out_png):
-    """Create a simple 3-row heatmap from binary_matrix.csv."""
-    df = pd.read_csv(binary_csv)
-    needed = ["mean_p", "crossmatch500_n50", "crossmatch1000_n50"]
-    df = df[["Locus"] + needed].dropna()
-    df[needed] = df[needed].astype(int)
+# ======================== Main Pipeline ========================
 
-    # reshape so rows = test methods, columns = loci
-    heatmap_data = df.set_index("Locus")[needed].T
-
-
-    plt.figure(figsize=(0.25 * len(df) + 3, 2.5))
-    sns.heatmap(heatmap_data, cmap="Greys", cbar_kws={"label": "1 = two clusters"})
-    plt.title("Binary Cluster Detection (Mean vs Crossmatch)")
-    plt.xlabel("Locus")
-    plt.ylabel("")
-    plt.tight_layout()
-    os.makedirs(os.path.dirname(out_png), exist_ok=True)
-    plt.savefig(out_png, dpi=300, bbox_inches="tight")
-    plt.close()
-
-
-# ------------------------- Main -------------------------
 def main():
-    # Load data
+    # Load all input data
     mean_df   = load_mean(MEAN_CSV)
     cross500  = load_cross(CROSS500_CSV,  "first/second-500")
     cross1000 = load_cross(CROSS1000_CSV, "all-1000")
 
-    # Build crossmatch wide
+    # Merge into wide format
     wide = crossmatch_wide(cross500, cross1000, use_normal=False)
     if wide.empty:
         raise SystemExit("No overlapping loci between crossmatch sources.")
@@ -295,42 +367,38 @@ def main():
                 .join(mean_df.set_index("Locus")["mean_p"], how="left")
                 .reset_index())
 
-    # Summary table (keep PNG + CSV)
+    # Generate and save summary table
     summary_table = create_summary_table(wide)
     summary_csv = os.path.join(OUTDIR, "hypothesis_testing_summary.csv")
     summary_table.to_csv(summary_csv, index=False)
-
     save_table_image(summary_table, os.path.join(OUTDIR, "hypothesis_testing_summary.png"),
                      max_rows=None, dpi=TABLE_DPI, rows="all")
 
     print("Summary Table:")
     print(summary_table.to_string(index=False))
 
-    # Save wide CSV (no wide image per request)
+    # Save wide CSV
     wide_csv = os.path.join(OUTDIR, "wide_with_mean.csv")
     wide.to_csv(wide_csv, index=False)
 
-    # ------------- Phase A: Crossmatch-only, per n -------------
+    # Create p-value comparison plots for each sample size
     for n in (50, 100, 150):
         c500_col  = f"crossmatch500_n{n}"
         c1000_col = f"crossmatch1000_n{n}"
         if not all(c in wide.columns for c in [c500_col, c1000_col]):
             continue
-
         sub = wide[["Locus","mean_p", c500_col, c1000_col]].dropna(subset=[c500_col, c1000_col])
-
         plot_line_with_mean(sub, n=n, outbase=f"ordered_by_mean_n{n}", order_by="mean")
 
-    # ------------- Phase B: Final three-way @ n=150 -------------
-    # Keep CSV 
+    # Export final comparison at n=150
     need_cols = ["mean_p","crossmatch500_n150","crossmatch1000_n150"]
     if all(c in wide.columns for c in need_cols):
         final150 = wide[["Locus"] + need_cols].dropna().sort_values("Locus")
         final150.to_csv(os.path.join(OUTDIR, "final_compare_n150.csv"), index=False)
     else:
-        print("[INFO] Skipping Phase B: missing one of mean_p, crossmatch500_n150, crossmatch1000_n150.")
+        print("[INFO] Skipping n=150 comparison: missing required columns.")
 
-    # ------------- Binary agreement analysis -------------
+    # Binary analysis: convert p-values to 0/1 (reject/fail to reject)
     specs = {}
     if "mean_p" in wide.columns:
         specs["mean_p"] = {"type":"p", "alpha": ALPHA}
@@ -343,14 +411,27 @@ def main():
     bin_df = binarize_tests(wide.set_index("Locus"), specs)
     bin_df.index.name = "Locus"
 
-    # Save binary matrix only (plus a summary CSV for counts/rates)
+    # Merge additional binary test results
+    for col_name, path in EXTRA_BIN_CSVS:
+        try:
+            s = (pd.read_csv(path, encoding="utf-8-sig")
+                .rename(columns=lambda c: c.strip()))
+            val_col = next(c for c in s.columns if c.strip().lower() != "locus")
+            s = s[["Locus", val_col]].dropna()
+            s["Locus"] = s["Locus"].astype(int)
+            series = pd.to_numeric(s[val_col], errors="coerce").round().clip(0,1).astype("Int64")
+            bin_df = bin_df.join(series.rename(col_name), how="left")
+        except Exception as e:
+            print(f"[WARN] Could not add {col_name} from {path}: {e}")
+
+    # Save binary outputs and generate heatmap
     bin_df.reset_index().to_csv(os.path.join(OUTDIR, "binary_matrix.csv"), index=False)
     summarize_binary(bin_df).to_csv(os.path.join(OUTDIR, "binary_summary.csv"))
 
     binary_csv = os.path.join(OUTDIR, "binary_matrix.csv")
     heatmap_png = os.path.join(OUTDIR, "binary_heatmap_3rows.png")
     plot_binary_heatmap(binary_csv, heatmap_png)
-    print(f"Saved 3-row binary heatmap to: {heatmap_png}")
+    print(f"Saved binary heatmap to: {heatmap_png}")
 
 
 if __name__ == "__main__":
