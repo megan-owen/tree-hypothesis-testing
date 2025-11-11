@@ -9,7 +9,7 @@
 
 import os
 import time
-import numpy as np
+import numpy as np 
 import jpype
 import jpype.imports
 from crossmatch_functions import crossmatchtest

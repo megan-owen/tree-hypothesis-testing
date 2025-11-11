@@ -12,9 +12,7 @@ This project implements a complete statistical pipeline for comparing two sets o
 
 ### Python Scripts
 - **`trees_to_edge_lengths.py`** – Simulates gene trees using DendroPy, computes edge lengths via Fréchet mean (SturmMean), and writes outputs.  
-- **`mean_test_gene_tree.py`** – Performs a **difference-of-means permutation test** on Fréchet mean edge-length features.  
-- **`crossmatch_functions.py`** – Implements the **Cross-Match test** on a set of items given a distance matrix.  
-- **`crossmatch_test_gene_trees.py`** – Runs Cross-Match test using **weighted Robinson–Foulds (wRF)** distances from DendroPy.  
+- **`crossmatch_functions.py`** – Implements the **Cross-Match test** on a set of items given a distance matrix.   
 - **`crossmatch_bhv.py`** – Runs Cross-Match test using **BHV distances** computed via `gtp.jar` through JPype.  
 - **`crossmatch_sample.py`** – Generalized script for performing Cross-Match tests on custom datasets.  
 - **`eric_functions.py`** – Utility functions for additional analyses.  
@@ -63,33 +61,6 @@ python trees_to_edge_lengths.py --tau1 10000 --tau2 10100 --tau3 11100 \
 output/gts_dendropy_CAT_tauAB-10000_tauABC-10500_tauRoot-11000_pAB-10000_pABC-10000_pRoot-10000
 output/gts_dendropy_CAT_tauAB-10000_tauABC-10100_tauRoot-11100_pAB-10000_pABC-10000_pRoot-10000
 ```
-
----
-
-### 2️⃣ Run the Mean (Permutation) Test
-
-```bash
-python mean_test_gene_tree.py
-```
-
-> ⚠️ File paths are hardcoded; update them if your output filenames differ.  
-> Output is saved to `mean_test_output.txt`.
-
----
-
-### 3️⃣ Run the Cross-Match Tests
-
-**Weighted Robinson–Foulds (wRF):**
-```bash
-python crossmatch_test_gene_trees.py
-```
-
-**BHV Distance (via gtp.jar):**
-```bash
-python crossmatch_bhv.py
-```
-
-> ⚠️ Both scripts use hardcoded input paths — modify as needed.
 
 ---
 
