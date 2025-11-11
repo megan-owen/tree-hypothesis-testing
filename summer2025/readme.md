@@ -1,2 +1,0 @@
-- SturmMean : java jar file that contains code for computing (Frechet) means of a set of trees
-- trees_to_edge_lengths.py  : Python script doing multiple things, including simulating gene trees for a given species tree and computing the Frechet mean of the gene trees 
